@@ -28,6 +28,16 @@ macOS: Selecteer een PDF > Archief > Toon info > Open met > ABN PDF Viewer > "Wi
 Bij de eerste keer vraagt Edge of Chrome eenmalig of de app bestanden van dit type
 mag openen. Kies "Toestaan".
 
+Pictogram van PDF-bestanden
+Zodra de ABN PDF Viewer het standaardprogramma is, toont Windows het ABN-pictogram met "PDF"
+bij uw PDF-bestanden. Ziet u nog een leeg of oud pictogram, doe dan dit:
+1. Verwijder de app (Edge/Chrome: Instellingen > Apps > Geïnstalleerde apps, of Windows
+   Instellingen > Apps) en installeer hem opnieuw vanaf het webadres, zodat het nieuwe
+   manifest wordt opgehaald.
+2. Kies daarna opnieuw "Openen met > ABN PDF Viewer > Altijd".
+3. Start Verkenner opnieuw (Taakbeheer > Windows Verkenner > Opnieuw starten) of meld u af en
+   weer aan. Windows bewaart pictogrammen in een cache en ververst die niet altijd meteen.
+
 Voor IT-beheerders
 Installatie kan centraal worden uitgerold via het beleid WebAppInstallForceList (Edge/Chrome).
 Het koppelen van .pdf aan de app kan via de gewone standaard-app-instellingen van Windows.
