@@ -1,0 +1,39 @@
+ABN PDF Viewer als standaardprogramma voor PDF-bestanden
+=========================================================
+
+Een los HTML-bestand of een artifact in claude.ai kan zich niet als standaardprogramma
+aanmelden. Dat kan wel met deze map: de viewer is dan een installeerbare webapp (PWA)
+die Windows en macOS kunnen kiezen om .pdf-bestanden te openen.
+
+Wat u nodig hebt
+- Een plek waar de map gepubliceerd wordt via https:// (bijvoorbeeld de interne
+  webserver of intranetsite). Voor een test volstaat: open een terminal in deze map
+  en voer "python -m http.server 8080" uit, ga dan naar http://localhost:8080
+- Microsoft Edge of Google Chrome, versie 102 of nieuwer, op Windows, macOS of Linux.
+  Firefox en Safari ondersteunen dit niet.
+
+Stap 1 - Publiceren
+Zet de volledige inhoud van deze map op de webserver (index.html, manifest.webmanifest,
+sw.js, de mappen css, js, lib en icons, en logo.png).
+
+Stap 2 - Installeren (eenmalig per computer)
+Open het webadres in Edge of Chrome en kies het installatie-icoon rechts in de adresbalk,
+of Menu > Apps > "Deze site installeren als app". De ABN PDF Viewer staat daarna als
+gewone app in het startmenu.
+
+Stap 3 - Standaard maken
+Windows: Rechtsklik op een PDF > Openen met > Kies een andere app > ABN PDF Viewer >
+"Altijd deze app gebruiken". Of: Instellingen > Apps > Standaard-apps > .pdf.
+macOS: Selecteer een PDF > Archief > Toon info > Open met > ABN PDF Viewer > "Wijzig alles".
+Bij de eerste keer vraagt Edge of Chrome eenmalig of de app bestanden van dit type
+mag openen. Kies "Toestaan".
+
+Voor IT-beheerders
+Installatie kan centraal worden uitgerold via het beleid WebAppInstallForceList (Edge/Chrome).
+Het koppelen van .pdf aan de app kan via de gewone standaard-app-instellingen van Windows.
+
+Goed om te weten
+- Bestanden worden lokaal in de browser verwerkt en nergens naartoe gestuurd.
+- Afdrukken werkt in de geïnstalleerde app met de printknop of Ctrl+P.
+- De viewer start op 100% en kiest zelf Nederlands of Engels volgens de taal van het systeem;
+  met de knoppen NL/EN bovenaan kunt u wisselen.
