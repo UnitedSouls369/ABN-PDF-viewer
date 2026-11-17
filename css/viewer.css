@@ -195,3 +195,21 @@ svg{display:block;flex:none}
 .start h1{font-size:22px}
 .start p{margin:0;color:var(--ink2);line-height:1.5}
 .start .hint{font-size:12px}
+
+/* ---------- Tabbladen ---------- */
+.tabbar{flex:none;display:flex;align-items:flex-end;gap:2px;padding:6px 12px 0;background:var(--bg);border-bottom:1px solid var(--line)}
+.dtabs{display:flex;align-items:flex-end;gap:2px;min-width:0;overflow-x:auto;scrollbar-width:none}
+.dtabs::-webkit-scrollbar{display:none}
+.dtab{position:relative;flex:0 1 200px;min-width:96px;max-width:240px;height:34px;padding:0 6px 0 12px;display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-bottom:0;border-radius:8px 8px 0 0;background:var(--tint);color:var(--ink2);font-size:13px;cursor:pointer;user-select:none}
+.dtab:hover{background:var(--surface);color:var(--ink)}
+.dtab.on{background:var(--surface);color:var(--ink);font-weight:500;height:36px;margin-bottom:-1px;box-shadow:inset 0 3px 0 var(--teal)}
+.dtab .dname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dtab .ddot{display:none;font-size:10px;color:var(--teal)}
+.dtab.dirty .ddot{display:inline}
+.dtab .dclose{flex:none;width:22px;height:22px;padding:0;border:0;border-radius:4px;background:transparent;color:inherit;display:inline-flex;align-items:center;justify-content:center;opacity:.7}
+.dtab .dclose:hover{background:var(--line);opacity:1}
+.dtab.dragging{opacity:.45}
+.dtab.dragover{box-shadow:-3px 0 0 var(--teal)}
+.dnew{flex:none;width:30px;height:30px;margin:0 0 3px 6px;padding:0;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--ink);display:inline-flex;align-items:center;justify-content:center}
+.dnew:hover{background:var(--tint);border-color:var(--line)}
+.tabbar[hidden]{display:none}

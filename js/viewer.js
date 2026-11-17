@@ -53,7 +53,9 @@ const EN = {
 'Selecteer tekst met de muis en kies Markeren, Onderstrepen of Doorhalen. Kies eerst een kleur.':'Select text with the mouse and choose Highlight, Underline or Strikethrough. Pick a colour first.','Plaats een notitie, een tekstvak, een tekening of een kader. Alles blijft te verplaatsen en te verwijderen.':'Place a note, a text box, a drawing or a rectangle. Everything can still be moved and deleted.',
 'Opslaan maakt een kopie met uw opmerkingen. Het originele bestand blijft ongewijzigd.':'Save makes a copy with your comments. The original file stays unchanged.','Meer doen':'Do more',"Via Hulpmiddelen opent u ABN PDF Studio om pagina's te ordenen, samen te voegen, te comprimeren of te beveiligen.":'Through Tools you open ABN PDF Studio to organise, merge, compress or protect pages.',
 'Het voorbeelddocument kon niet worden geladen. Open een PDF via Openen.':'The sample document could not be loaded. Open a PDF with Open.',
-'Opmerkingen ':'Comments '
+'Opmerkingen ':'Comments ',
+'Geopende documenten':'Open documents','PDF openen (Ctrl+O)':'Open PDF (Ctrl+O)','PDF openen in een nieuw tabblad':'Open PDF in a new tab','Tabblad sluiten':'Close tab','Tabblad sluiten: {0}':'Close tab: {0}','Toch sluiten':'Close anyway',
+'De opmerkingen in "{0}" gaan verloren als u dit tabblad sluit. Gebruik eerst Opslaan als u ze wilt bewaren.':'The comments in "{0}" will be lost if you close this tab. Use Save first if you want to keep them.','"{0}" is al geopend.':'"{0}" is already open.',
 };
 const detect = () => { const l = ((navigator.languages && navigator.languages[0]) || navigator.language || 'nl').toLowerCase(); return l.startsWith('nl') ? 'nl' : 'en'; };
 let LANG = detect(); try { const sv0 = localStorage.getItem('abn-viewer-lang'); if (sv0 === 'nl' || sv0 === 'en') LANG = sv0; } catch {}
@@ -91,7 +93,7 @@ const ICONS = {
   thumbs: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z', mark: 'M7 3h10v18l-5-4-5 4z', tool: 'M14.7 6.3a4 4 0 0 0-5 5L3 18l3 3 6.7-6.7a4 4 0 0 0 5-5l-2.4 2.4-2.6-.6-.6-2.6z',
   cont: 'M7 3h10v8H7zM7 13h10v8H7z', single: 'M7 3h10v18H7z', two: 'M3 5h8v14H3zM13 5h8v14h-8z', inv: 'M12 3a9 9 0 1 0 0 18zM12 3a9 9 0 0 1 0 18',
   sun: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
-  moon: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z', auto: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 3v18M12 3a9 9 0 0 1 0 18', ext: 'M14 4h6v6M20 4l-9 9M18 14v6H4V6h6'
+  moon: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z', auto: 'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 3v18M12 3a9 9 0 0 1 0 18', ext: 'M14 4h6v6M20 4l-9 9M18 14v6H4V6h6', x: 'M6 6l12 12M18 6L6 18', plus: 'M12 5v14M5 12h14'
 };
 function icon(name, size = 18) {
   const s = sv('svg', { width: size, height: size, viewBox: '0 0 24 24', fill: name === 'inv' ? 'currentColor' : 'none', stroke: 'currentColor', 'stroke-width': 1.7, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'aria-hidden': 'true' });
@@ -156,7 +158,11 @@ function build() {
   $.name = el('span', { class: 'docname' });
   $.themeBtn = el('button', { class: 'btn ghost icon', type: 'button', id: 'theme', onclick: cycleTheme });
   $.toolsBtn = el('button', { class: 'btn', type: 'button', id: 'tools-btn', 'aria-haspopup': 'true', 'aria-expanded': 'false', onclick: toggleToolsMenu }, icon('tool'), t('Hulpmiddelen'));
-  $.file = el('input', { type: 'file', accept: '.pdf,application/pdf', class: 'sr', id: 'file-in', 'aria-label': t('PDF kiezen'), onchange: (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) openFile(f); } });
+  $.file = el('input', { type: 'file', accept: '.pdf,application/pdf', class: 'sr', id: 'file-in', multiple: true, 'aria-label': t('PDF kiezen'), onchange: (e) => { const fs = [...e.target.files]; e.target.value = ''; if (fs.length) openFiles(fs); } });
+  $.tabsList = el('div', { class: 'dtabs', role: 'tablist', 'aria-label': t('Geopende documenten') });
+  $.tabsList.addEventListener('wheel', (e) => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { $.tabsList.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });
+  $.tabbar = el('div', { class: 'tabbar', hidden: !TABS.length }, $.tabsList,
+    el('button', { class: 'dnew', type: 'button', id: 'tab-new', title: t('PDF openen (Ctrl+O)'), 'aria-label': t('PDF openen in een nieuw tabblad'), onclick: () => $.file.click() }, icon('plus', 16)));
   const top = el('header', { class: 'top' },
     el('img', { class: 'logo', src: BASE + 'logo.png', alt: 'ABN Cleanroom Technology' }), el('div', { class: 'sep' }), el('span', { class: 'app' }, 'PDF Viewer'), $.name, el('div', { class: 'sp' }),
     el('button', { class: 'btn', type: 'button', id: 'open', onclick: () => $.file.click() }, icon('open'), t('Openen')),
@@ -201,8 +207,8 @@ function build() {
     el('p', { class: 'hint' }, t('Alles blijft op uw computer.'))));
   $.stage = el('div', { class: 'stage' + (S.invert ? ' inv' : ''), id: 'stage', 'data-tool': S.tool, tabindex: '-1' }, $.pages, $.start);
   $.status = el('footer', { class: 'status' }, el('span', { id: 'st-info' }), el('span', null, t('Verwerking gebeurt lokaal in uw browser, er worden geen bestanden verstuurd')));
-  document.getElementById('app').replaceChildren(top, bar, $.searchbar, el('div', { class: 'main' }, $.side, $.stage), $.status);
-  paintTheme(); wireStage(); syncZoomUI(); updateHeader();
+  document.getElementById('app').replaceChildren(top, $.tabbar, bar, $.searchbar, el('div', { class: 'main' }, $.side, $.stage), $.status);
+  paintTheme(); wireStage(); syncZoomUI(); updateHeader(); renderTabs();
 }
 
 /* ---------- Thema ---------- */
@@ -218,13 +224,14 @@ function paintTheme() {
 function cycleTheme() { theme = THEMES[(THEMES.indexOf(theme) + 1) % 3]; try { localStorage.setItem('abn-viewer-theme', theme); } catch {} paintTheme(); toast(themeLabel()); }
 
 /* ---------- Document laden ---------- */
+async function openFiles(files) { for (const f of files) await openFile(f); }
 async function openFile(file) {
   if (!/\.pdf$/i.test(file.name) && file.type !== 'application/pdf') { toast(t('Dit is geen PDF-bestand.'), 'error'); return; }
-  if (S.dirty && !(await modal({ title: t('Niet-opgeslagen opmerkingen'), ok: t('Toch openen'), body: el('p', { class: 'empty' }, t('De opmerkingen in het huidige document gaan verloren als u een ander bestand opent. Gebruik eerst Opslaan als u ze wilt bewaren.')) }))) return;
+  const dup = TABS.find((x) => { const d = x === activeTab ? S : x.d; return d.name === file.name && d.size === file.size; });
+  if (dup) { activateTab(dup); toast(t('"{0}" is al geopend.', file.name)); return; }
   await loadBytes(new Uint8Array(await file.arrayBuffer()), file.name);
 }
 async function loadBytes(bytes, name) {
-  const gen = ++S.gen;
   let task = pdfjs.getDocument({ ...PDFJS_OPTS, data: bytes.slice() }); let pw = null;
   task.onPassword = async (cb, reason) => {
     const inp = el('input', { type: 'password', id: 'pw-in', autocomplete: 'off' });
@@ -232,28 +239,28 @@ async function loadBytes(bytes, name) {
     if (v == null) { task.destroy(); return; } pw = v; cb(v);
   };
   let pdf;
-  try { pdf = await task.promise; } catch (e) { if (gen === S.gen) toast(e && e.name === 'PasswordException' ? t('Geen wachtwoord opgegeven.') : t('"{0}" is geen geldige PDF of is beschadigd.', name), 'error'); return; }
-  if (gen !== S.gen) { pdf.destroy(); return; }
-  if (S.pdf) { try { S.pdf.destroy(); } catch {} }
-  Object.assign(S, { isSample: false, zoomMode: 1, pdf, bytes, name, size: bytes.length, password: pw, rot: 0, zoomMode: 1, isSample: false, cur: 1, annots: [], sel: null, undo: [], redo: [], dirty: false, hits: [], hitIdx: -1, q: '', texts: [], sizes: [], els: [] });
-  $.q.value = ''; $.cnt.textContent = ''; $.start.hidden = true;
-  // paginaformaten: eerste pagina meteen, de rest op de achtergrond
+  try { pdf = await task.promise; } catch (e) { toast(e && e.name === 'PasswordException' ? t('Geen wachtwoord opgegeven.') : t('"{0}" is geen geldige PDF of is beschadigd.', name), 'error'); return; }
+  // elk document krijgt een eigen tabblad met een eigen toestand
+  const d = { pdf, bytes, name, size: bytes.length, password: pw, sizes: [], rot: 0, zoomMode: 1, zoom: 1, sc: S.sc, view: S.view, cur: 1, annots: [], sel: null, undo: [], redo: [], dirty: false, nextId: 1, texts: [], hits: [], hitIdx: -1, q: '' };
   const sizeOf = async (i) => { const p = await pdf.getPage(i); const v = p.getViewport({ scale: 1 }); return { w: v.width, h: v.height }; };
-  S.sizes[1] = await sizeOf(1);
-  for (let i = 2; i <= pdf.numPages; i++) S.sizes[i] = S.sizes[1];
-  buildPages(); updateHeader(); buildThumbs(); buildOutline(); buildNotesList(); renderUndo();
-  (async () => { // werkelijke formaten nalopen
-    for (let i = 2; i <= pdf.numPages; i += 20) {
-      const chunk = await Promise.all(Array.from({ length: Math.min(20, pdf.numPages - i + 1) }, (_, k) => sizeOf(i + k)));
-      if (gen !== S.gen) return; chunk.forEach((s, k) => { S.sizes[i + k] = s; });
-    }
-    if (gen === S.gen) layout(true);
+  d.sizes[1] = await sizeOf(1);
+  for (let i = 2; i <= pdf.numPages; i++) d.sizes[i] = d.sizes[1];
+  addTab(d);
+  (async () => { // werkelijke paginaformaten nalopen (ook als de gebruiker intussen van tabblad wisselt)
+    try {
+      for (let i = 2; i <= pdf.numPages; i += 20) {
+        const chunk = await Promise.all(Array.from({ length: Math.min(20, pdf.numPages - i + 1) }, (_, k) => sizeOf(i + k)));
+        chunk.forEach((sz, k) => { d.sizes[i + k] = sz; });
+      }
+    } catch { return; } // tabblad intussen gesloten
+    if (S.pdf === pdf) layout(true);
   })();
 }
 function updateHeader() {
   $.name.replaceChildren(el('b', null, S.name), S.dirty ? ' ●' : '');
   $.pageOf.textContent = '/ ' + (S.pdf ? S.pdf.numPages : 0); $.pageIn.value = String(S.cur);
   document.title = (S.name ? S.name + ' · ' : '') + 'ABN PDF Viewer';
+  if (activeTab) paintTab(activeTab);
   $.status.firstChild.textContent = S.pdf ? `${S.pdf.numPages === 1 ? t('1 pagina') : t("{0} pagina's", S.pdf.numPages)} · ${fmtBytes(S.size)} · ${Math.round(S.sc * 75)}%` : '';
 }
 
@@ -383,7 +390,15 @@ function onScroll() {
 }
 function wireStage() {
   $.stage.addEventListener('scroll', onScroll, { passive: true });
-  $.stage.addEventListener('wheel', (e) => { if (e.ctrlKey || e.metaKey) { e.preventDefault(); stepZoom(e.deltaY < 0 ? 1 : -1); } }, { passive: false });
+  $.stage.addEventListener('wheel', (e) => {
+    if (e.ctrlKey || e.metaKey) { e.preventDefault(); stepZoom(e.deltaY < 0 ? 1 : -1); return; }
+    // Horizontaal scrollen: duimwiel (bv. Logitech MX Master 3S), horizontale touchpad-beweging of Shift + muiswiel
+    const dx = e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX;
+    if (dx && (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY))) {
+      const k = e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? $.stage.clientWidth : 1;
+      const before = $.stage.scrollLeft; $.stage.scrollLeft += dx * k; if ($.stage.scrollLeft !== before) e.preventDefault();
+    }
+  }, { passive: false });
   let drag = null;
   $.stage.addEventListener('pointerdown', (e) => { if (S.tool !== 'hand' || e.button !== 0) return; drag = { x: e.clientX, y: e.clientY, l: $.stage.scrollLeft, t: $.stage.scrollTop }; $.stage.classList.add('grabbing'); $.stage.setPointerCapture(e.pointerId); });
   $.stage.addEventListener('pointermove', (e) => { if (!drag) return; $.stage.scrollLeft = drag.l - (e.clientX - drag.x); $.stage.scrollTop = drag.t - (e.clientY - drag.y); });
@@ -652,6 +667,72 @@ function toggleToolsMenu() {
 function outside(e) { if (menu && !menu.contains(e.target) && !$.toolsBtn.contains(e.target)) closeMenu(); }
 function closeMenu() { if (menu) { menu.remove(); menu = null; } $.toolsBtn.setAttribute('aria-expanded', 'false'); document.removeEventListener('pointerdown', outside, true); }
 
+/* ---------- Tabbladen (meerdere PDF's tegelijk) ---------- */
+// Per document bewaren we de toestand in het tabblad; S bevat altijd de toestand van het actieve tabblad.
+const DOC_KEYS = ['pdf', 'bytes', 'name', 'size', 'password', 'sizes', 'rot', 'zoomMode', 'zoom', 'sc', 'view', 'cur', 'annots', 'sel', 'undo', 'redo', 'dirty', 'nextId', 'texts', 'hits', 'hitIdx', 'q'];
+const TABS = []; let activeTab = null, tabSeq = 0, dragTab = null;
+const tabDoc = (tab) => (tab === activeTab ? S : tab.d);
+function snapshotTab() {
+  if (!activeTab) return;
+  DOC_KEYS.forEach((k) => { activeTab.d[k] = S[k]; });
+  Object.assign(activeTab, { scroll: $.stage.scrollTop, query: $.q.value, cnt: $.cnt.textContent, cs: $.case.checked });
+}
+function addTab(d) { const tab = { id: ++tabSeq, d, scroll: 0, query: '', cnt: '', cs: false }; TABS.push(tab); activateTab(tab); }
+function activateTab(tab, force) {
+  if (tab === activeTab && !force) return;
+  closeNote(); snapshotTab();
+  activeTab = tab; Object.assign(S, tab.d); S.gen++; S.pendingHit = null; S.searchRun++; S.els = [];
+  $.q.value = tab.query || ''; $.cnt.textContent = tab.cnt || ''; $.case.checked = !!tab.cs; $.start.hidden = true;
+  buildPages(); updateHeader(); buildThumbs(); buildOutline(); buildNotesList(); renderUndo(); syncZoomUI(); renderTabs();
+  requestAnimationFrame(() => { if (activeTab !== tab) return; if (S.view === 'cont') $.stage.scrollTop = tab.scroll || 0; else goTo(S.cur); });
+}
+function showEmpty() {
+  activeTab = null; S.gen++; S.searchRun++; io && io.disconnect();
+  Object.assign(S, { pdf: null, bytes: null, name: '', size: 0, password: null, sizes: [], els: [], rot: 0, zoomMode: 1, cur: 1, annots: [], sel: null, undo: [], redo: [], dirty: false, hits: [], hitIdx: -1, q: '', texts: [], pendingHit: null });
+  $.pages.replaceChildren(); $.pThumbs.replaceChildren(); $.pMarks.replaceChildren(); $.pNotes.replaceChildren(); $.q.value = ''; $.cnt.textContent = ''; $.start.hidden = false;
+  updateHeader(); renderUndo(); renderTabs();
+}
+async function closeTab(tab) {
+  const d = tabDoc(tab);
+  if (d.dirty && !(await modal({ title: t('Niet-opgeslagen opmerkingen'), ok: t('Toch sluiten'), body: el('p', { class: 'empty' }, t('De opmerkingen in "{0}" gaan verloren als u dit tabblad sluit. Gebruik eerst Opslaan als u ze wilt bewaren.', d.name)) }))) return;
+  const i = TABS.indexOf(tab); if (i < 0) return;
+  const was = tab === activeTab; TABS.splice(i, 1);
+  if (!was) { try { tab.d.pdf.destroy(); } catch {} renderTabs(); return; }
+  const pdf = S.pdf; activeTab = null; const next = TABS[i] || TABS[i - 1];
+  if (next) activateTab(next, true); else showEmpty();
+  try { pdf.destroy(); } catch {}
+}
+function cycleTab(dir) { if (TABS.length < 2) return; const i = TABS.indexOf(activeTab); activateTab(TABS[(i + dir + TABS.length) % TABS.length]); $.tabsList.querySelector('.dtab.on')?.focus(); }
+function paintTab(tab) {
+  if (!tab.btn) return; const d = tabDoc(tab); tab.btn.classList.toggle('dirty', !!d.dirty);
+  tab.btn.title = d.name + (d.dirty ? ' ●' : '');
+}
+function renderTabs() {
+  if (!$.tabbar) return; $.tabbar.hidden = !TABS.length; $.tabsList.replaceChildren();
+  TABS.forEach((tab, i) => {
+    const on = tab === activeTab; const d = tabDoc(tab);
+    const b = el('div', { class: 'dtab' + (on ? ' on' : '') + (d.dirty ? ' dirty' : ''), role: 'tab', 'aria-selected': String(on), tabindex: on ? '0' : '-1', title: d.name + (d.dirty ? ' ●' : ''), draggable: 'true' },
+      el('span', { class: 'dname' }, d.name), el('span', { class: 'ddot', 'aria-hidden': 'true' }, '●'),
+      el('button', { class: 'dclose', type: 'button', tabindex: '-1', title: t('Tabblad sluiten'), 'aria-label': t('Tabblad sluiten: {0}', d.name), onclick: (e) => { e.stopPropagation(); closeTab(tab); } }, icon('x', 14)));
+    b.addEventListener('click', () => activateTab(tab));
+    b.addEventListener('mousedown', (e) => { if (e.button === 1) e.preventDefault(); });
+    b.addEventListener('auxclick', (e) => { if (e.button === 1) { e.preventDefault(); closeTab(tab); } });
+    b.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activateTab(tab); }
+      else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { e.preventDefault(); e.stopPropagation(); const n = TABS[(i + (e.key === 'ArrowRight' ? 1 : -1) + TABS.length) % TABS.length]; activateTab(n); $.tabsList.querySelector('.dtab.on')?.focus(); }
+      else if (e.key === 'Delete') { e.preventDefault(); closeTab(tab); }
+    });
+    b.addEventListener('dragstart', (e) => { dragTab = tab; e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', d.name); } catch {} b.classList.add('dragging'); });
+    b.addEventListener('dragend', () => { dragTab = null; $.tabsList.querySelectorAll('.dragging,.dragover').forEach((n) => n.classList.remove('dragging', 'dragover')); });
+    b.addEventListener('dragover', (e) => { if (!dragTab || dragTab === tab) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; b.classList.add('dragover'); });
+    b.addEventListener('dragleave', () => b.classList.remove('dragover'));
+    b.addEventListener('drop', (e) => { if (!dragTab || dragTab === tab) return; e.preventDefault(); e.stopPropagation(); const from = TABS.indexOf(dragTab), to = TABS.indexOf(tab); TABS.splice(from, 1); TABS.splice(to, 0, dragTab); dragTab = null; renderTabs(); });
+    tab.btn = b; $.tabsList.append(b);
+  });
+  activeTab && activeTab.btn && activeTab.btn.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+window.addEventListener('beforeunload', (e) => { if (TABS.some((x) => tabDoc(x).dirty)) { e.preventDefault(); e.returnValue = ''; } });
+
 /* ---------- Toetsenbord en slepen ---------- */
 document.addEventListener('keydown', (e) => {
   const typing = /^(input|textarea|select)$/i.test(e.target.tagName) || e.target.isContentEditable; const mod = e.ctrlKey || e.metaKey;
@@ -659,6 +740,7 @@ document.addEventListener('keydown', (e) => {
   if (mod && e.key.toLowerCase() === 's') { e.preventDefault(); save(); return; }
   if (mod && e.key.toLowerCase() === 'p') { e.preventDefault(); printDoc(); return; }
   if (mod && e.key.toLowerCase() === 'o') { e.preventDefault(); $.file.click(); return; }
+  if (e.ctrlKey && (e.key === 'Tab' || e.key === 'PageDown' || e.key === 'PageUp') && TABS.length > 1) { e.preventDefault(); cycleTab(e.key === 'PageUp' || (e.key === 'Tab' && e.shiftKey) ? -1 : 1); return; }
   if (e.key === 'Escape') { closeMenu(); closeNote(); if (S.sel != null) { S.sel = null; redrawAll(); } return; }
   if (typing) return;
   if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
@@ -674,13 +756,13 @@ document.addEventListener('keydown', (e) => {
 });
 ['dragenter', 'dragover'].forEach((t) => document.addEventListener(t, (e) => { if ([...(e.dataTransfer?.types || [])].includes('Files')) { e.preventDefault(); document.body.classList.add('drop-over'); } }));
 document.addEventListener('dragleave', (e) => { if (!e.relatedTarget) document.body.classList.remove('drop-over'); });
-document.addEventListener('drop', (e) => { e.preventDefault(); document.body.classList.remove('drop-over'); const f = e.dataTransfer?.files?.[0]; if (f) openFile(f); });
+document.addEventListener('drop', (e) => { e.preventDefault(); document.body.classList.remove('drop-over'); const fs = [...(e.dataTransfer?.files || [])]; if (fs.length) openFiles(fs); });
 
 /* ---------- Start ---------- */
 build();
 // Als geïnstalleerde app (PWA) kan de viewer als standaardprogramma voor .pdf worden gekozen: Windows/macOS geeft het bestand dan door via de launchQueue.
 if ('launchQueue' in window && window.launchQueue.setConsumer) window.launchQueue.setConsumer(async (params) => {
   if (!params.files || !params.files.length) return;
-  try { const f = await params.files[0].getFile(); await openFile(f); } catch (e) { console.warn(e); toast(t('Dit is geen PDF-bestand.'), 'error'); }
+  try { for (const h of params.files) await openFile(await h.getFile()); } catch (e) { console.warn(e); toast(t('Dit is geen PDF-bestand.'), 'error'); }
 });
-window.__viewer = { S, loadBytes, goTo, setZoom, setView, setTool, buildAnnotatedPdf };
+window.__viewer = { S, TABS, activateTab, closeTab, openFiles, loadBytes, goTo, setZoom, setView, setTool, buildAnnotatedPdf };

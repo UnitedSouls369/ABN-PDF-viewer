@@ -47,3 +47,10 @@ Goed om te weten
 - Afdrukken werkt in de geïnstalleerde app met de printknop of Ctrl+P.
 - De viewer start op 100% en kiest zelf Nederlands of Engels volgens de taal van het systeem;
   met de knoppen NL/EN bovenaan kunt u wisselen.
+
+Tabbladen en scrollen
+- Elke PDF opent in een eigen tabblad (met eigen zoom, paginapositie, zoekopdracht en opmerkingen). Kies meerdere bestanden
+  tegelijk bij Openen, sleep ze op het venster, of dubbelklik meerdere PDF's in Verkenner: ze komen als tabbladen in dezelfde app.
+- Wisselen: klik op een tabblad, Ctrl+Tab / Ctrl+Shift+Tab (of Ctrl+PageDown / PageUp). Sluiten: kruisje of middelste muisknop.
+  Volgorde wijzigen: tabblad slepen. Is een bestand al open, dan springt de viewer naar dat tabblad.
+- Horizontaal scrollen: duimwiel (Logitech MX Master 3S), Shift + muiswiel of horizontaal vegen op een touchpad.
