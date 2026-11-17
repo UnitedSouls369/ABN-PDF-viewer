@@ -37,7 +37,7 @@ const EN = {
 'Opslaan mislukt: ':'Saving failed: ','Opgeslagen als {0}':'Saved as {0}',"Beveiligde PDF's kunnen hier niet met opmerkingen worden opgeslagen":'Protected PDFs cannot be saved with comments here',
 'Afdrukken voorbereiden…':'Preparing to print…','Afdrukken voorbereiden… pagina {0} van {1}':'Preparing to print… page {0} of {1}','Deze omgeving staat afdrukken vanuit de pagina niet toe. Het bestand wordt opgeslagen, open het in uw PDF-lezer om af te drukken.':'This environment does not allow printing from the page. The file is being saved; open it in your PDF reader to print.','Afdrukken mislukt: ':'Printing failed: ',
 'Bestandsnaam':'File name','Bestandsgrootte':'File size','Titel':'Title','Auteur':'Author','Onderwerp':'Subject','Trefwoorden':'Keywords','Gemaakt met':'Created with','PDF-producent':'PDF producer','PDF-versie':'PDF version','Aangemaakt':'Created','Gewijzigd':'Modified',"Aantal pagina's":'Number of pages','Paginaformaat':'Page size','Snelle webweergave':'Fast web view','Formuliervelden':'Form fields','Beveiligd met wachtwoord':'Password protected','Opmerkingen in deze sessie':'Comments in this session','Ja':'Yes','Nee':'No','{0} en {1} andere':'{0} and {1} more',
-'Opent het hulpmiddel in ABN PDF Studio in een nieuw tabblad. Sla uw bestand eerst op en sleep het daarna in het hulpmiddel. Het bestand blijft op uw computer.':'Opens the tool in ABN PDF Studio in a new tab. Save your file first, then drag it into the tool. The file stays on your computer.','Alle hulpmiddelen in PDF Studio':'All tools in PDF Studio','Annuleren':'Cancel','Laat het bestand los om het te openen':'Drop the file to open it',
+'Opent het hulpmiddel in ABN PDF Studio in een nieuw tabblad. Sla uw bestand eerst op en sleep het daarna in het hulpmiddel. Het bestand blijft op uw computer.':'Opens the tool in ABN PDF Studio in a new tab. Save your file first, then drag it into the tool. The file stays on your computer.','Alle hulpmiddelen in PDF Studio':'All tools in PDF Studio','Annuleren':'Cancel','Open een PDF om te beginnen':'Open a PDF to get started','Sleep een PDF-bestand hierheen of kies een bestand van uw computer.':'Drag a PDF file here or choose a file from your computer.','Alles blijft op uw computer.':'Everything stays on your computer.','Laat het bestand los om het te openen':'Drop the file to open it',
 'Cleanroomklassen in het kort':'Cleanroom classes in brief','Voorbeelddocument voor de ABN PDF Viewer':'Sample document for the ABN PDF Viewer','Voorbeelddocument':'Sample document','Pagina {0} van 3':'Page {0} of 3','Cleanroomklassen in het kort.pdf':'Cleanroom classes in brief.pdf',
 'Een cleanroom wordt ingedeeld op de maximale concentratie luchtdeeltjes per kubieke meter lucht. ISO 14644-1 hanteert hiervoor klassen van ISO 1 tot en met ISO 9. Hoe lager het getal, hoe schoner de ruimte.':'A cleanroom is classified by the maximum concentration of airborne particles per cubic metre of air. ISO 14644-1 uses classes from ISO 1 to ISO 9 for this. The lower the number, the cleaner the room.',
 'De tabel hieronder toont de maximale concentratie van deeltjes van 0,5 µm en groter voor de klassen die in de praktijk het vaakst voorkomen.':'The table below shows the maximum concentration of particles of 0.5 µm and larger for the classes used most often in practice.',
@@ -148,7 +148,6 @@ async function setLang(l) {
   const had = S.pdf, side = !$.side.classList.contains('closed'), sOpen = !$.searchbar.hidden, q = $.q.value, cnt = $.cnt.textContent; closeMenu(); closeNote(); build();
   if (side) $.side.classList.remove('closed'); if (sOpen) { $.searchbar.hidden = false; $.q.value = q; $.cnt.textContent = cnt; }
   if (!had) return;
-  if (S.isSample && !S.annots.length) { const nm = t('Cleanroomklassen in het kort.pdf'); await loadBytes(await makeSample(), nm); if (S.name === nm) S.isSample = true; return; }
   buildPages(); updateHeader(); buildThumbs(); buildOutline(); buildNotesList(); renderUndo(); goTo(S.cur);
 }
 
@@ -195,10 +194,15 @@ function build() {
   $.pThumbs = el('div', { class: 'panel thumbs', role: 'tabpanel' }); $.pMarks = el('div', { class: 'panel', role: 'tabpanel', hidden: true }); $.pNotes = el('div', { class: 'panel', role: 'tabpanel', hidden: true });
   $.side = el('aside', { class: 'side closed', 'aria-label': t('Zijpaneel') }, el('div', { class: 'tabs', role: 'tablist' }, ...$.tabBtns), $.pThumbs, $.pMarks, $.pNotes);
   $.pages = el('div', { class: 'pages cont' });
-  $.stage = el('div', { class: 'stage' + (S.invert ? ' inv' : ''), id: 'stage', 'data-tool': S.tool, tabindex: '-1' }, $.pages);
+  $.start = el('div', { class: 'start', hidden: !!S.pdf }, el('div', { class: 'card' },
+    el('img', { class: 'slogo', src: BASE + 'logo.png', alt: 'ABN Cleanroom Technology' }), el('h1', null, t('Open een PDF om te beginnen')),
+    el('p', null, t('Sleep een PDF-bestand hierheen of kies een bestand van uw computer.')),
+    el('button', { class: 'btn pri', type: 'button', id: 'start-open', onclick: () => $.file.click() }, icon('open'), t('PDF kiezen')),
+    el('p', { class: 'hint' }, t('Alles blijft op uw computer.'))));
+  $.stage = el('div', { class: 'stage' + (S.invert ? ' inv' : ''), id: 'stage', 'data-tool': S.tool, tabindex: '-1' }, $.pages, $.start);
   $.status = el('footer', { class: 'status' }, el('span', { id: 'st-info' }), el('span', null, t('Verwerking gebeurt lokaal in uw browser, er worden geen bestanden verstuurd')));
   document.getElementById('app').replaceChildren(top, bar, $.searchbar, el('div', { class: 'main' }, $.side, $.stage), $.status);
-  paintTheme(); wireStage();
+  paintTheme(); wireStage(); syncZoomUI(); updateHeader();
 }
 
 /* ---------- Thema ---------- */
@@ -232,7 +236,7 @@ async function loadBytes(bytes, name) {
   if (gen !== S.gen) { pdf.destroy(); return; }
   if (S.pdf) { try { S.pdf.destroy(); } catch {} }
   Object.assign(S, { isSample: false, zoomMode: 1, pdf, bytes, name, size: bytes.length, password: pw, rot: 0, zoomMode: 1, isSample: false, cur: 1, annots: [], sel: null, undo: [], redo: [], dirty: false, hits: [], hitIdx: -1, q: '', texts: [], sizes: [], els: [] });
-  $.q.value = ''; $.cnt.textContent = '';
+  $.q.value = ''; $.cnt.textContent = ''; $.start.hidden = true;
   // paginaformaten: eerste pagina meteen, de rest op de achtergrond
   const sizeOf = async (i) => { const p = await pdf.getPage(i); const v = p.getViewport({ scale: 1 }); return { w: v.width, h: v.height }; };
   S.sizes[1] = await sizeOf(1);
@@ -672,43 +676,8 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('dragleave', (e) => { if (!e.relatedTarget) document.body.classList.remove('drop-over'); });
 document.addEventListener('drop', (e) => { e.preventDefault(); document.body.classList.remove('drop-over'); const f = e.dataTransfer?.files?.[0]; if (f) openFile(f); });
 
-/* ---------- Voorbeelddocument ---------- */
-async function makeSample() {
-  const L = window.PDFLib; const doc = await L.PDFDocument.create({ updateMetadata: false }); doc.setTitle(t('Cleanroomklassen in het kort')); doc.setAuthor('ABN Cleanroom Technology'); doc.setSubject(t('Voorbeelddocument voor de ABN PDF Viewer')); doc.setProducer('ABN PDF Viewer'); doc.setCreator('ABN PDF Viewer');
-  const f = await doc.embedFont(L.StandardFonts.Helvetica), fb = await doc.embedFont(L.StandardFonts.HelveticaBold); let logo = null;
-  try { logo = await doc.embedPng(await (await fetch(BASE + 'logo.png')).arrayBuffer()); } catch {}
-  const navy = L.rgb(0, .286, .455), teal = L.rgb(.106, .576, .647), ink = L.rgb(.1, .15, .18), pale = L.rgb(.91, .957, .965);
-  const W = 595.28, H = 841.89;
-  const head = (page, n) => { page.drawRectangle({ x: 0, y: H - 70, width: W, height: 70, color: navy }); if (logo) { const d = logo.scale(0.17); page.drawRectangle({ x: 40, y: H - 58, width: d.width + 12, height: d.height + 8, color: L.rgb(1, 1, 1) }); page.drawImage(logo, { x: 46, y: H - 54, width: d.width, height: d.height }); } page.drawText(t('Voorbeelddocument'), { x: W - 40 - fb.widthOfTextAtSize(t('Voorbeelddocument'), 10), y: H - 40, size: 10, font: fb, color: L.rgb(1, 1, 1) }); page.drawText(t('Pagina {0} van 3', n), { x: 40, y: 30, size: 9, font: f, color: L.rgb(.35, .45, .5) }); };
-  const para = (page, text, x, y, size, width, lh = 1.5) => { let line = '', yy = y; for (const w of text.split(' ')) { const t = line ? line + ' ' + w : w; if (f.widthOfTextAtSize(t, size) > width) { page.drawText(line, { x, y: yy, size, font: f, color: ink }); yy -= size * lh; line = w; } else line = t; } page.drawText(line, { x, y: yy, size, font: f, color: ink }); return yy - size * lh; };
-  const table = (page, x, y, cols, rows, widths) => { const rh = 26; page.drawRectangle({ x, y: y - rh, width: widths.reduce((a, b) => a + b, 0), height: rh, color: navy }); let cx = x; cols.forEach((c, i) => { page.drawText(c, { x: cx + 10, y: y - 17, size: 10, font: fb, color: L.rgb(1, 1, 1) }); cx += widths[i]; });
-    rows.forEach((r, ri) => { const ry = y - rh * (ri + 2); if (ri % 2 === 0) page.drawRectangle({ x, y: ry, width: widths.reduce((a, b) => a + b, 0), height: rh, color: pale }); cx = x; r.forEach((c, i) => { page.drawText(c, { x: cx + 10, y: ry + 9, size: 10.5, font: i === 0 ? fb : f, color: ink }); cx += widths[i]; }); }); return y - rh * (rows.length + 1); };
-  let p = doc.addPage([W, H]); head(p, 1);
-  p.drawText(t('Cleanroomklassen in het kort'), { x: 40, y: H - 120, size: 24, font: fb, color: navy }); p.drawRectangle({ x: 40, y: H - 132, width: 56, height: 3, color: teal });
-  let y = para(p, t('Een cleanroom wordt ingedeeld op de maximale concentratie luchtdeeltjes per kubieke meter lucht. ISO 14644-1 hanteert hiervoor klassen van ISO 1 tot en met ISO 9. Hoe lager het getal, hoe schoner de ruimte.'), 40, H - 165, 12, W - 80);
-  y = para(p, t('De tabel hieronder toont de maximale concentratie van deeltjes van 0,5 µm en groter voor de klassen die in de praktijk het vaakst voorkomen.'), 40, y - 6, 12, W - 80);
-  p.drawText(t('Tabel 1. Deeltjesconcentratie per klasse (vanaf 0,5 µm)'), { x: 40, y: y - 24, size: 11, font: fb, color: navy });
-  table(p, 40, y - 40, [t('ISO-klasse'), t('Max. deeltjes per m³ (vanaf 0,5 µm)'), t('Typische toepassing')], [['ISO 5', N('3.520'), t('Aseptische vulling, isolatoren')], ['ISO 6', N('35.200'), t('Steriele productie, omgeving')], ['ISO 7', N('352.000'), t('Verpakking, laboratorium')], ['ISO 8', N('3.520.000'), t('Ondersteunende ruimten, sassen')], ['ISO 9', N('35.200.000'), t('Omgevingslucht binnen')]], [90, 210, 175]);
-  p.drawText(t('Bron: ISO 14644-1. Raadpleeg de norm voor alle klassen en deeltjesgroottes.'), { x: 40, y: 60, size: 9, font: f, color: L.rgb(.35, .45, .5) });
-  p = doc.addPage([W, H]); head(p, 2);
-  p.drawText(t('GMP-grades volgens EU GMP Annex 1'), { x: 40, y: H - 120, size: 22, font: fb, color: navy }); p.drawRectangle({ x: 40, y: H - 132, width: 56, height: 3, color: teal });
-  y = para(p, t('Voor de productie van steriele geneesmiddelen onderscheidt Annex 1 vier grades, A tot en met D. Grade A is de zone voor kritische handelingen, bijvoorbeeld het vullen van product. Grades B tot en met D vormen de omgeving en de ondersteunende ruimten.'), 40, H - 165, 12, W - 80);
-  p.drawText(t('Tabel 2. Maximaal toegestane deeltjes per m³ (vanaf 0,5 µm)'), { x: 40, y: y - 24, size: 11, font: fb, color: navy });
-  y = table(p, 40, y - 40, ['Grade', t('In rust'), t('In bedrijf')], [['A', N('3.520'), N('3.520')], ['B', N('3.520'), N('352.000')], ['C', N('352.000'), N('3.520.000')], ['D', N('3.520.000'), t('Niet vooraf bepaald')]], [120, 170, 185]);
-  para(p, t('In rust betekent dat de installatie volledig is opgesteld en draait, zonder personeel. In bedrijf betekent dat het proces in de normale bezetting verloopt. Ook de microbiologische limieten en de drukverschillen tussen de zones maken deel uit van de eisen.'), 40, y - 24, 12, W - 80);
-  p = doc.addPage([W, H]); head(p, 3);
-  p.drawText(t('Zo gebruikt u deze viewer'), { x: 40, y: H - 120, size: 22, font: fb, color: navy }); p.drawRectangle({ x: 40, y: H - 132, width: 56, height: 3, color: teal });
-  const tips = [[t('Lezen'), t('Zoom met de knoppen, Ctrl en scrollen of via de keuzelijst. Kies een doorlopende, enkele of dubbele paginaweergave.')], [t(t('Zoeken')), t('Druk op Ctrl+F, typ een woord, bijvoorbeeld grade, en spring met Enter van treffer naar treffer.')], [t('Markeren'), t('Selecteer tekst met de muis en kies Markeren, Onderstrepen of Doorhalen. Kies eerst een kleur.')], [t('Notities'), t('Plaats een notitie, een tekstvak, een tekening of een kader. Alles blijft te verplaatsen en te verwijderen.')], [t(t('Opslaan')), t('Opslaan maakt een kopie met uw opmerkingen. Het originele bestand blijft ongewijzigd.')], [t('Meer doen'), t("Via Hulpmiddelen opent u ABN PDF Studio om pagina's te ordenen, samen te voegen, te comprimeren of te beveiligen.")]];
-  y = H - 170; for (const [t, d] of tips) { p.drawRectangle({ x: 40, y: y - 52, width: 4, height: 52, color: teal }); p.drawText(t, { x: 56, y: y - 14, size: 12.5, font: fb, color: navy }); para(p, d, 56, y - 32, 11, W - 110, 1.4); y -= 74; }
-  return doc.save();
-}
-
 /* ---------- Start ---------- */
 build();
-(async () => {
-  try { const nm = t('Cleanroomklassen in het kort.pdf'); await loadBytes(await makeSample(), nm); if (S.name === nm) S.isSample = true; }
-  catch (e) { console.error(e); toast(t('Het voorbeelddocument kon niet worden geladen. Open een PDF via Openen.'), 'error'); }
-})();
 // Als geïnstalleerde app (PWA) kan de viewer als standaardprogramma voor .pdf worden gekozen: Windows/macOS geeft het bestand dan door via de launchQueue.
 if ('launchQueue' in window && window.launchQueue.setConsumer) window.launchQueue.setConsumer(async (params) => {
   if (!params.files || !params.files.length) return;
