@@ -1,5 +1,5 @@
 // Zet de viewer offline beschikbaar: eerst uit de cache, anders van het netwerk (en dan bewaren).
-const CACHE = 'abn-pdf-viewer-v7';
+const CACHE = 'abn-pdf-viewer-v8';
 const CORE = ['./', 'index.html', 'css/viewer.css', 'js/viewer.js', 'logo.png', 'lib/pdf-lib.min.js', 'lib/pdfjs/pdf.min.js', 'lib/pdfjs/pdf.worker.min.js'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => Promise.allSettled(CORE.map((u) => c.add(u)))).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });

@@ -54,3 +54,9 @@ Tabbladen en scrollen
 - Wisselen: klik op een tabblad, Ctrl+Tab / Ctrl+Shift+Tab (of Ctrl+PageDown / PageUp). Sluiten: kruisje of middelste muisknop.
   Volgorde wijzigen: tabblad slepen. Is een bestand al open, dan springt de viewer naar dat tabblad.
 - Horizontaal scrollen: duimwiel (Logitech MX Master 3S), Shift + muiswiel of horizontaal vegen op een touchpad.
+
+Eén venster en scrolltest
+- Opent u een PDF via Verkenner terwijl de viewer al openstaat, dan komt het bestand als tabblad in dat venster (manifest: launch_handler).
+  Na het bijwerken van de bestanden: verwijder de geinstalleerde app en installeer hem opnieuw, anders blijft het oude manifest gelden.
+- Werkt het duimwiel niet? Open wheel-test.html in Edge of Chrome en draai het duimwiel boven het blauwe vlak. Staat er "Horizontaal signaal: JA",
+  dan komt het signaal aan. In de viewer verschuift de pagina pas als ze breder is dan het scherm (inzoomen); anders verschijnt een melding.

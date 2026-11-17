@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Scrolltest muis</title>
+<style>body{margin:0;font:15px system-ui,sans-serif;color:#004974;background:#F5F9FA}header{padding:14px 20px;background:#fff;border-bottom:1px solid #D5E3E6}h1{font-size:18px;margin:0 0 4px}
+#log{font:14px ui-monospace,Consolas,monospace;padding:12px 20px;background:#fff;border-bottom:1px solid #D5E3E6;min-height:96px;white-space:pre}
+#area{overflow:auto;height:calc(100vh - 220px)}#wide{width:3000px;height:1200px;background:repeating-linear-gradient(90deg,#E8F4F6 0 100px,#AFDCDF 100px 200px)}
+.ok{color:#1E6B3A;font-weight:600}.no{color:#A3262A;font-weight:600}</style></head><body>
+<header><h1>Scrolltest voor het duimwiel (bv. Logitech MX Master 3S)</h1><div>Beweeg de muis over het blauwe vlak en draai het duimwiel. Staat er hieronder "deltaX" met een getal, dan komt het signaal aan in de browser.</div></header>
+<div id="log">Nog geen scrollsignaal ontvangen…</div>
+<div id="area"><div id="wide"></div></div>
+<script>
+const log=document.getElementById('log'),area=document.getElementById('area');let n=0;
+window.addEventListener('wheel',e=>{n++;const h=Math.abs(e.deltaX)>0||e.shiftKey;
+log.innerHTML='Aantal signalen: '+n+'\ndeltaX: '+e.deltaX+'   deltaY: '+e.deltaY+'   shift: '+e.shiftKey+'   ctrl: '+e.ctrlKey+'   deltaMode: '+e.deltaMode+'\nHorizontaal signaal: '+(h?'<span class="ok">JA</span>':'<span class="no">nee (alleen verticaal)</span>')+'\nscrollLeft van het vlak: '+Math.round(area.scrollLeft);},{passive:true});
+</script></body></html>

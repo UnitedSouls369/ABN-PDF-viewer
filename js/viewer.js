@@ -54,7 +54,7 @@ const EN = {
 'Opslaan maakt een kopie met uw opmerkingen. Het originele bestand blijft ongewijzigd.':'Save makes a copy with your comments. The original file stays unchanged.','Meer doen':'Do more',"Via Hulpmiddelen opent u ABN PDF Studio om pagina's te ordenen, samen te voegen, te comprimeren of te beveiligen.":'Through Tools you open ABN PDF Studio to organise, merge, compress or protect pages.',
 'Het voorbeelddocument kon niet worden geladen. Open een PDF via Openen.':'The sample document could not be loaded. Open a PDF with Open.',
 'Opmerkingen ':'Comments ',
-'Geopende documenten':'Open documents','PDF openen (Ctrl+O)':'Open PDF (Ctrl+O)','PDF openen in een nieuw tabblad':'Open PDF in a new tab','Tabblad sluiten':'Close tab','Tabblad sluiten: {0}':'Close tab: {0}','Toch sluiten':'Close anyway',
+'Geopend in uw andere venster':'Opened in your other window','Uw bestand staat als tabblad in het andere ABN PDF Viewer-venster. U kunt dit venster sluiten.':'Your file is open as a tab in the other ABN PDF Viewer window. You can close this window.','De pagina past volledig in beeld. Zoom in om horizontaal te kunnen verschuiven.':'The page fits entirely. Zoom in to scroll horizontally.','Geopende documenten':'Open documents','PDF openen (Ctrl+O)':'Open PDF (Ctrl+O)','PDF openen in een nieuw tabblad':'Open PDF in a new tab','Tabblad sluiten':'Close tab','Tabblad sluiten: {0}':'Close tab: {0}','Toch sluiten':'Close anyway',
 'De opmerkingen in "{0}" gaan verloren als u dit tabblad sluit. Gebruik eerst Opslaan als u ze wilt bewaren.':'The comments in "{0}" will be lost if you close this tab. Use Save first if you want to keep them.','"{0}" is al geopend.':'"{0}" is already open.',
 };
 const detect = () => { const l = ((navigator.languages && navigator.languages[0]) || navigator.language || 'nl').toLowerCase(); return l.startsWith('nl') ? 'nl' : 'en'; };
@@ -388,6 +388,7 @@ function onScroll() {
     if (best !== S.cur) { S.cur = best; S.els.forEach((pg, i) => pg && pg.classList.toggle('cur', i === best)); markCurrent(); updateHeader(); }
   });
 }
+let hintAt = 0;
 function wireStage() {
   $.stage.addEventListener('scroll', onScroll, { passive: true });
   $.stage.addEventListener('wheel', (e) => {
@@ -396,7 +397,9 @@ function wireStage() {
     const dx = e.shiftKey && !e.deltaX ? e.deltaY : e.deltaX;
     if (dx && (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY))) {
       const k = e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? $.stage.clientWidth : 1;
-      const before = $.stage.scrollLeft; $.stage.scrollLeft += dx * k; if ($.stage.scrollLeft !== before) e.preventDefault();
+      const before = $.stage.scrollLeft; $.stage.scrollLeft += dx * k;
+      if ($.stage.scrollLeft !== before) e.preventDefault();
+      else if ($.stage.scrollWidth <= $.stage.clientWidth + 1 && Date.now() - hintAt > 5000) { hintAt = Date.now(); toast(t('De pagina past volledig in beeld. Zoom in om horizontaal te kunnen verschuiven.')); }
     }
   }, { passive: false });
   let drag = null;
@@ -761,8 +764,31 @@ document.addEventListener('drop', (e) => { e.preventDefault(); document.body.cla
 /* ---------- Start ---------- */
 build();
 // Als geïnstalleerde app (PWA) kan de viewer als standaardprogramma voor .pdf worden gekozen: Windows/macOS geeft het bestand dan door via de launchQueue.
+/* ---------- Eén venster voor alle PDF's ----------
+   Dubbelklikt u een PDF in Verkenner terwijl de viewer al open is, dan hoort het bestand als nieuw tabblad in dat venster te komen.
+   1) Het manifest vraagt dat via launch_handler (focus-existing). 2) Als Windows toch een tweede venster start, geeft dat venster
+   zijn bestanden door aan het eerste venster (BroadcastChannel) en sluit zichzelf. */
+const WIN_ID = Math.random().toString(36).slice(2); let handingOff = false;
+const CH = 'BroadcastChannel' in window ? new BroadcastChannel('abn-pdf-viewer') : null;
+if (CH) CH.onmessage = async (ev) => {
+  const m = ev.data; if (!m || m.from === WIN_ID) return;
+  if (m.type === 'ping' && !handingOff) CH.postMessage({ type: 'pong', from: WIN_ID, to: m.from });
+  else if (m.type === 'open' && m.to === WIN_ID && Array.isArray(m.files)) { try { window.focus(); } catch {} await openFiles(m.files); }
+};
+const findPeer = () => new Promise((res) => { if (!CH) return res(null); const h = (ev) => { const m = ev.data; if (m && m.type === 'pong' && m.to === WIN_ID) { CH.removeEventListener('message', h); clearTimeout(tm); res(m.from); } }; const tm = setTimeout(() => { CH.removeEventListener('message', h); res(null); }, 450); CH.addEventListener('message', h); CH.postMessage({ type: 'ping', from: WIN_ID }); });
+// Als geïnstalleerde app (PWA) kan de viewer als standaardprogramma voor .pdf worden gekozen: Windows/macOS geeft het bestand dan door via de launchQueue.
 if ('launchQueue' in window && window.launchQueue.setConsumer) window.launchQueue.setConsumer(async (params) => {
   if (!params.files || !params.files.length) return;
-  try { for (const h of params.files) await openFile(await h.getFile()); } catch (e) { console.warn(e); toast(t('Dit is geen PDF-bestand.'), 'error'); }
+  try {
+    const files = []; for (const h of params.files) files.push(await h.getFile());
+    handingOff = true; const peer = await findPeer();
+    if (peer) { // er is al een viewer-venster: bestanden daarheen sturen en dit extra venster sluiten
+      CH.postMessage({ type: 'open', from: WIN_ID, to: peer, files });
+      await new Promise((r) => setTimeout(r, 250)); try { window.close(); } catch {}
+      setTimeout(() => { $.start.querySelector('h1').textContent = t('Geopend in uw andere venster'); $.start.querySelector('p').textContent = t('Uw bestand staat als tabblad in het andere ABN PDF Viewer-venster. U kunt dit venster sluiten.'); }, 400);
+      return;
+    }
+    handingOff = false; await openFiles(files);
+  } catch (e) { handingOff = false; console.warn(e); toast(t('Dit is geen PDF-bestand.'), 'error'); }
 });
 window.__viewer = { S, TABS, activateTab, closeTab, openFiles, loadBytes, goTo, setZoom, setView, setTool, buildAnnotatedPdf };
