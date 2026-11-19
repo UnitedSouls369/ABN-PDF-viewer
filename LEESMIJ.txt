@@ -1,62 +1,13 @@
-ABN PDF Viewer als standaardprogramma voor PDF-bestanden
-=========================================================
+ABN PDF Studio - update: handtekeningen alleen zwart, naam bij opgeslagen handtekening
+=======================================================================================
 
-Een los HTML-bestand of een artifact in claude.ai kan zich niet als standaardprogramma
-aanmelden. Dat kan wel met deze map: de viewer is dan een installeerbare webapp (PWA)
-die Windows en macOS kunnen kiezen om .pdf-bestanden te openen.
+Gewijzigde bestanden (kopieer de mappen js en css over de gelijknamige mappen van de Offline PDF Studio):
+  js/editor.js, js/i18n.js, css/app.css
+Maak eerst een kopie van uw map: deze bestanden vervangen de oude volledig.
 
-Wat u nodig hebt
-- Een plek waar de map gepubliceerd wordt via https:// (bijvoorbeeld de interne
-  webserver of intranetsite). Voor een test volstaat: open een terminal in deze map
-  en voer "python -m http.server 8080" uit, ga dan naar http://localhost:8080
-- Microsoft Edge of Google Chrome, versie 102 of nieuwer, op Windows, macOS of Linux.
-  Firefox en Safari ondersteunen dit niet.
-
-Stap 1 - Publiceren
-Zet de volledige inhoud van deze map op de webserver (index.html, manifest.webmanifest,
-sw.js, de mappen css, js, lib en icons, en logo.png).
-
-Stap 2 - Installeren (eenmalig per computer)
-Open het webadres in Edge of Chrome en kies het installatie-icoon rechts in de adresbalk,
-of Menu > Apps > "Deze site installeren als app". De ABN PDF Viewer staat daarna als
-gewone app in het startmenu.
-
-Stap 3 - Standaard maken
-Windows: Rechtsklik op een PDF > Openen met > Kies een andere app > ABN PDF Viewer >
-"Altijd deze app gebruiken". Of: Instellingen > Apps > Standaard-apps > .pdf.
-macOS: Selecteer een PDF > Archief > Toon info > Open met > ABN PDF Viewer > "Wijzig alles".
-Bij de eerste keer vraagt Edge of Chrome eenmalig of de app bestanden van dit type
-mag openen. Kies "Toestaan".
-
-Pictogram van PDF-bestanden
-Zodra de ABN PDF Viewer het standaardprogramma is, toont Windows het ABN-pictogram met "PDF"
-bij uw PDF-bestanden. Ziet u nog een leeg of oud pictogram, doe dan dit:
-1. Verwijder de app (Edge/Chrome: Instellingen > Apps > Geïnstalleerde apps, of Windows
-   Instellingen > Apps) en installeer hem opnieuw vanaf het webadres, zodat het nieuwe
-   manifest wordt opgehaald.
-2. Kies daarna opnieuw "Openen met > ABN PDF Viewer > Altijd".
-3. Start Verkenner opnieuw (Taakbeheer > Windows Verkenner > Opnieuw starten) of meld u af en
-   weer aan. Windows bewaart pictogrammen in een cache en ververst die niet altijd meteen.
-
-Voor IT-beheerders
-Installatie kan centraal worden uitgerold via het beleid WebAppInstallForceList (Edge/Chrome).
-Het koppelen van .pdf aan de app kan via de gewone standaard-app-instellingen van Windows.
-
-Goed om te weten
-- Bestanden worden lokaal in de browser verwerkt en nergens naartoe gestuurd.
-- Afdrukken werkt in de geïnstalleerde app met de printknop of Ctrl+P.
-- De viewer start op 100% en kiest zelf Nederlands of Engels volgens de taal van het systeem;
-  met de knoppen NL/EN bovenaan kunt u wisselen.
-
-Tabbladen en scrollen
-- Elke PDF opent in een eigen tabblad (met eigen zoom, paginapositie, zoekopdracht en opmerkingen). Kies meerdere bestanden
-  tegelijk bij Openen, sleep ze op het venster, of dubbelklik meerdere PDF's in Verkenner: ze komen als tabbladen in dezelfde app.
-- Wisselen: klik op een tabblad, Ctrl+Tab / Ctrl+Shift+Tab (of Ctrl+PageDown / PageUp). Sluiten: kruisje of middelste muisknop.
-  Volgorde wijzigen: tabblad slepen. Is een bestand al open, dan springt de viewer naar dat tabblad.
-- Horizontaal scrollen: duimwiel (Logitech MX Master 3S), Shift + muiswiel of horizontaal vegen op een touchpad.
-
-Eén venster en scrolltest
-- Opent u een PDF via Verkenner terwijl de viewer al openstaat, dan komt het bestand als tabblad in dat venster (manifest: launch_handler).
-  Na het bijwerken van de bestanden: verwijder de geinstalleerde app en installeer hem opnieuw, anders blijft het oude manifest gelden.
-- Werkt het duimwiel niet? Open wheel-test.html in Edge of Chrome en draai het duimwiel boven het blauwe vlak. Staat er "Horizontaal signaal: JA",
-  dan komt het signaal aan. In de viewer verschuift de pagina pas als ze breder is dan het scherm (inzoomen); anders verschijnt een melding.
+Dit pakket bevat ook alle eerdere wijzigingen:
+- Tekstvak: bovenaan een greep "Verplaatsen" om het vak te slepen.
+- Handtekening: tabs Tekenen / Typen / Afbeelding; handtekeningen bewaren voor later gebruik (alleen in deze browser).
+- Handtekeningen zijn altijd zwart: de kleurkeuze is verwijderd, en bij een afbeelding met transparante achtergrond wordt de inkt zwart gemaakt.
+- Bij het bewaren kunt u een naam invullen (bv. van wie de handtekening is); de naam staat onder de opgeslagen handtekening.
+Eerder opgeslagen handtekeningen blijven bestaan (zonder naam) en worden bij het plaatsen zwart gemaakt.
